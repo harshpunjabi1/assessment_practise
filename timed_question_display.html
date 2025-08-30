@@ -1,0 +1,133 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Question Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        .question {
+            display: none;
+            margin: 20px 0;
+        }
+        .question.active {
+            display: block;
+        }
+        #timer {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Data Analysis Interview Practice</h1>
+    <div id="timer">Time Remaining: 00:00</div>
+    <div id="question1" class="question">
+        <h2>Question 1: Employee Earnings</h2>
+        <p><a href="https://www.tryexponent.com/questions/3960/employee-earnings" target="_blank">Question 1 Link</a></p>
+    </div>
+    <div id="question2" class="question">
+        <h2>Question 2: Revenue by Customer City</h2>
+        <p><a href="https://www.tryexponent.com/questions/4378/revenue-by-customer-city" target="_blank">Question 2 Link</a></p>
+    </div>
+    <div id="question3" class="question">
+        <h2>Question 3: Card Launch Success</h2>
+        <p><a href="https://datalemur.com/questions/card-launch-success" target="_blank">Question 3 Link</a></p>
+    </div>
+    <button id="startButton">Start Timer</button>
+
+    <script>
+        const questions = ['question1', 'question2', 'question3'];
+        const timerDurations = [30 * 60, 45 * 60, 30 * 60]; // 30 min, 45 min, 30 min in seconds
+        let currentQuestionIndex = 0;
+        let timer;
+
+        function startTimer() {
+            document.getElementById('startButton').style.display = 'none';
+            showQuestion();
+            updateTimer();
+        }
+
+        function showQuestion() {
+            questions.forEach((q, index) => {
+                const element = document.getElementById(q);
+                element.classList.toggle('active', index === currentQuestionIndex);
+            });
+        }
+
+        function updateTimer() {
+            let timeLeft = timerDurations[currentQuestionIndex];
+            const timerDisplay = document.getElementById('timer');
+
+            timer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        showQuestion();
+                        updateTimer();
+                    } else {
+                        timerDisplay.textContent = 'All questions completed!';
+                    }
+                    return;
+                }
+
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerDisplay.textContent = `Time Remaining: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timeLeft--;
+            }, 1000);
+        }
+
+        document.getElementById('startButton').addEventListener('click', startTimer);
+    </script>
+</body>
+</html>
